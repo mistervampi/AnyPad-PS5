@@ -10,6 +10,11 @@
 <a name="english"></a>
 # 🇬🇧 English
 
+> ## ⚠️ KNOWN ISSUE: it can break the console's own DualSense
+> While AnyPad is searching/pairing, it may detect the console's **own DualSense** and pair it by mistake. The DualSense then stops working normally with the console.
+> **Until this is fixed: keep your DualSense switched OFF while you pair other controllers.**
+> If it happens: reset the DualSense (small hole on the back, next to L2, hold ~5 s with a paperclip) and connect it to the console with the USB-C cable.
+
 > ## ⚠️ MANDATORY: create a NEW console user
 > **AnyPad PS5 does not work if the controller is assigned to the same user as your DualSense.**
 > You must **create a new user on the PS5** and assign the controller to that user when the console
@@ -164,6 +169,11 @@ exposed.ct.ws@gmail.com · X / Twitter: [@elmonomalvad0](https://x.com/elmonomal
 
 <a name="español"></a>
 # 🇪🇸 Español
+
+> ## ⚠️ FALLO CONOCIDO: puede estropear el DualSense de la consola
+> Mientras AnyPad busca o empareja, puede detectar el **propio DualSense de la consola** y emparejarlo por error. Entonces el DualSense deja de funcionar con normalidad con la consola.
+> **Hasta que se arregle: mantén tu DualSense APAGADO mientras emparejas otros mandos.**
+> Si ocurre: resetea el DualSense (agujero pequeño de la parte trasera, junto a L2, mantén ~5 s con un clip) y conéctalo a la consola con el cable USB-C.
 
 > ## ⚠️ OBLIGATORIO: crea un usuario NUEVO en la consola
 > **AnyPad PS5 no funciona si el mando se asigna al mismo usuario que tu DualSense.**
