@@ -134,6 +134,10 @@ Test log of the console trials: [PRUEBAS.md](PRUEBAS.md) (Spanish). Version hist
 
 GPL-3.0-or-later. See [LICENSE](LICENSE).
 
+## Contact
+
+anypadps5@proton.me
+
 
 ---
 
@@ -251,3 +255,7 @@ Registro de pruebas en consola: [PRUEBAS.md](PRUEBAS.md). Historial de versiones
 ## Licencia
 
 GPL-3.0-or-later. Ver [LICENSE](LICENSE).
+
+## Contacto
+
+anypadps5@proton.me
