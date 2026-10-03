@@ -31,6 +31,7 @@ typedef struct {
 struct sim {
     unsigned stale;                 /* handle+1 of a link left by an earlier run, 0: none */
     int stale_cleared;
+    int n_inquiry;                  /* Inquiry commands received */
     sim_pad pad;
     queue ev, acl;
     int connected, enc, has_key, got_output;
@@ -412,6 +413,7 @@ static int op_cmd(void *ctx, unsigned op, const void *params, int plen)
         break;
     }
     case 0x0401:        /* Inquiry */
+        s->n_inquiry++;
         cmd_status(s, op, 0);
         if (s->pad.mode == SIM_WAIT_PAIRING && !s->connected) {
             unsigned char r[255] = { 0 };
@@ -686,6 +688,7 @@ int sim_sdp_continuations(const sim_t *s) { return s->sdp_conts; }
 int sim_link_up(const sim_t *s) { return s->connected; }
 int sim_dropped(const sim_t *s) { return s->dropped; }
 int sim_scan(const sim_t *s) { return s->scan; }
+int sim_inquiries(const sim_t *s) { return s->n_inquiry; }
 void sim_stale_link(sim_t *s, unsigned handle) { s->stale = handle + 1; }
 int sim_stale_cleared(const sim_t *s) { return s->stale_cleared; }
 void sim_set_scan(sim_t *s, int v) { s->scan = v; }

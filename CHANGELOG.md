@@ -5,6 +5,13 @@ version is set in `src/version.h` and is also in the first line of the log, in
 the start-up notification, on the web page, and in the binary
 (`strings AnyPad-PS5-*.elf | grep anypad-version`).
 
+## 0.5.1-alpha
+
+- La búsqueda de mandos ya no se queda atascada: si el aviso de "fin de búsqueda" del chip se pierde, a los 14 s se cancela y se busca otra vez (antes quedaba parada hasta 45 s, y el mando "no aparecía").
+- Al arrancar se cancela cualquier búsqueda que una ejecución anterior cortada dejara en el chip; si el chip contesta "comando no permitido" (0x0c) se espera a que acabe en vez de repetir la orden decenas de veces; al parar AnyPad no se deja ninguna búsqueda en marcha.
+- Un aviso de fin de búsqueda dañado (longitud errónea) ya no se toma por bueno.
+- Test nuevo `test_inquiry_watchdog` (probado con mutación).
+
 ## 0.5.0-alpha
 
 - Base: 0.4.7-alpha (se descarta el cambio de Select como PS de la 0.4.8).
