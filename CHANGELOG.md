@@ -5,9 +5,12 @@ version is set in `src/version.h` and is also in the first line of the log, in
 the start-up notification, on the web page, and in the binary
 (`strings AnyPad-PS5-*.elf | grep anypad-version`).
 
-## 0.4.8-alpha
+## 0.5.0-alpha
 
-- Mandos sin botón Home/PS: su botón Select/Back pasa a hacer de PS (la consola lo necesita para pasar el mando al usuario creado). Se avisa en el log y se puede cambiar con un `.map`. Test nuevo en `test_profiles`.
+- Base: 0.4.7-alpha (se descarta el cambio de Select como PS de la 0.4.8).
+- Botón **«Pulsar PS»** en la tarjeta de cada mando del menú web: equivale a mantener pulsado PS en ese mando (envía PS al mando virtual durante 700 ms). Sirve para activar uno u otro mando como principal. Nuevo `POST /api/ps?slot=N`.
+- Hasta 4 mandos a la vez (límite de `HOST_MAX_PADS`), documentado; la web explica cómo nombrar los usuarios de la consola según el mando.
+- README: recomendación de nombrar el usuario como el mando, varios mandos, "igual en cualquier consola", cuenta de X @elmonomalvad0.
 
 ## 0.4.7-alpha
 

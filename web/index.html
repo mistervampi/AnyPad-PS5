@@ -76,8 +76,10 @@ pre { margin: 10px 0 0; max-height: 320px; overflow: auto; font-size: 12px; colo
     <h2>Emparejar</h2>
     <div class="hint" style="margin-bottom:10px"><b style="color:var(--orange)">Antes de empezar:</b> crea un
       <b>usuario nuevo</b> en la consola. Cuando la consola detecte el mando y pregunte qué usuario lo usa,
-      elige ese usuario nuevo. Juega con tu usuario principal y pulsa el botón <b>PS</b> un momento: se usa el
-      mando del usuario creado. Si se queda en el usuario del DualSense, funciona en los menús pero los juegos no lo ven.</div>
+      elige ese usuario nuevo (ponle el nombre del mando, p. ej. «PS4» o «Wii»). Juega con tu usuario principal y,
+      en la tarjeta del mando, pulsa <b>Pulsar PS</b> (o el botón PS del propio mando): se usa el mando del usuario
+      creado. Con varios mandos, el botón de cada tarjeta lo activa como principal. Si se queda en el usuario del DualSense,
+      funciona en los menús pero los juegos no lo ven.</div>
     <div class="row">
       <button id="pair" class="solid">Emparejar un mando (60 s)</button>
       <span id="pairinfo" class="hint">Pon el mando en modo emparejamiento después de pulsar.</span>
@@ -158,6 +160,10 @@ function renderPads(pads) {
     const btns = el("div", "btns");
     for (const b of p.buttons) btns.appendChild(el("span", "", NAMES[b] || b));
     c.appendChild(btns);
+    const ps = el("button", "solid", "Pulsar PS");
+    ps.title = "Es como mantener pulsado el botón PS de este mando: la consola se lo pasa al usuario al que lo asignaste";
+    ps.onclick = async () => { try { await api("POST", "/api/ps?slot=" + p.slot); } catch (e) {} };
+    c.appendChild(ps);
     if (p.battery >= 0) {
       const bat = el("div", "batt"), fill = el("b");
       fill.style.width = p.battery + "%";
