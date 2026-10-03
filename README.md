@@ -152,7 +152,7 @@ GPL-3.0-or-later. See [LICENSE](LICENSE).
 
 ## Contact
 
-anypadps5@proton.me · X / Twitter: [@elmonomalvad0](https://x.com/elmonomalvad0)
+exposed.ct.ws@gmail.com · X / Twitter: [@elmonomalvad0](https://x.com/elmonomalvad0)
 
 
 ---
@@ -290,4 +290,4 @@ GPL-3.0-or-later. Ver [LICENSE](LICENSE).
 
 ## Contacto
 
-anypadps5@proton.me · X / Twitter: [@elmonomalvad0](https://x.com/elmonomalvad0)
+exposed.ct.ws@gmail.com · X / Twitter: [@elmonomalvad0](https://x.com/elmonomalvad0)
