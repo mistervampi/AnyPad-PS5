@@ -371,6 +371,26 @@ static void builtin_map(generic_ctx *g, uint16_t vid, uint16_t pid)
     }
 }
 
+/* The console needs a PS button to be pressed to hand the pad over to the
+ * user it was assigned to. A pad with no home button (many have none) gets
+ * one: its Select/Back, which games use the least, becomes PS. A mapping file
+ * loaded afterwards can still change it. */
+static void ensure_ps(generic_ctx *g, uint16_t vid, uint16_t pid)
+{
+    int i, n = g->nbuttons < MAX_BUTTONS ? g->nbuttons : MAX_BUTTONS;
+
+    if (g->home.present) return;
+    for (i = 0; i < n; i++) if (g->button_map[i] & PAD_PS) return;
+    for (i = 0; i < n; i++) {
+        if (g->button_map[i] & PAD_CREATE) {
+            g->button_map[i] = (g->button_map[i] & ~(uint32_t)PAD_CREATE) | PAD_PS;
+            log_line("generic %04x:%04x: no home button, button %d (Select) acts as PS", vid, pid, i + 1);
+            return;
+        }
+    }
+    log_line("generic %04x:%04x: no home or Select button; map one to \"ps\" in a .map file", vid, pid);
+}
+
 static void load_map(generic_ctx *g, uint16_t vid, uint16_t pid, const char *dir)
 {
     char path[300], line[160];
@@ -409,6 +429,7 @@ int generic_setup(void *ctx, const uint8_t *desc, int len,
     }
     default_mapping(g);
     builtin_map(g, vid, pid);
+    ensure_ps(g, vid, pid);
     load_map(g, vid, pid, map_dir);
     log_line("generic %04x:%04x: %d buttons, axes%s%s%s%s%s%s%s%s, hat %s",
              vid, pid, g->nbuttons,

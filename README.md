@@ -85,6 +85,13 @@ A payload killed without closing its Bluetooth links can leave a stale link on t
 version closes stale links when it finds one, but a clean stop is still best. The *Salir* button
 only leaves the page and keeps AnyPad running.
 
+## Pads with no PS / Home button
+
+The console needs the PS button to hand the pad over to the user you created. Xbox, Switch and most
+pads have a Home/Guide button that acts as PS. A pad **without** one uses its **Select / Back** button
+as PS (the button games use the least); the log says `button N (Select) acts as PS`. You can change it
+with a `.map` file.
+
 ## Mapping a controller with no profile
 
 The log prints the ids and what the HID descriptor has. To change the mapping, write
@@ -217,6 +224,13 @@ AnyPad PS5 se puede añadir a la lista de autoload de tu cargador de payloads, c
 Un payload cortado sin cerrar sus enlaces Bluetooth puede dejar un enlace huérfano en el chip; esta
 versión los cierra cuando los encuentra, pero lo mejor es parar limpio. El botón *Salir* solo
 abandona la página y deja AnyPad funcionando.
+
+## Mandos sin botón PS / Home
+
+La consola necesita el botón PS para pasarle el mando al usuario que has creado. Xbox, Switch y la mayoría
+de mandos tienen un botón Home/Guide que hace de PS. Un mando **sin** él usa su botón **Select / Back**
+como PS (el que menos usan los juegos); el log dice `button N (Select) acts as PS`. Se puede cambiar con
+un fichero `.map`.
 
 ## Mapear un mando sin perfil
 

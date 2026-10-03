@@ -5,6 +5,10 @@ version is set in `src/version.h` and is also in the first line of the log, in
 the start-up notification, on the web page, and in the binary
 (`strings AnyPad-PS5-*.elf | grep anypad-version`).
 
+## 0.4.8-alpha
+
+- Mandos sin botón Home/PS: su botón Select/Back pasa a hacer de PS (la consola lo necesita para pasar el mando al usuario creado). Se avisa en el log y se puede cambiar con un `.map`. Test nuevo en `test_profiles`.
+
 ## 0.4.7-alpha
 
 - Texto corregido sobre el usuario creado: se juega con el usuario principal y se pulsa PS un momento para usar el mando del usuario creado (notificación de arranque, web, README, notas de la release).

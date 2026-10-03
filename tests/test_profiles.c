@@ -284,6 +284,30 @@ static void test_generic(void)
     CHECK(p->parse(ctx, r, sizeof r, &st) == PARSE_OK);
     CHECK((st.buttons & 0x8) && !(st.buttons & 0x100));     /* options, not L2 */
 
+    {   /* A pad with no home button: its Select acts as PS. */
+        unsigned char nohome[sizeof k_desc];
+        size_t cut = 0, k;
+        unsigned char sel[10];
+
+        for (k = 0; k + 1 < sizeof k_desc; k++)
+            if (k_desc[k] == 0x85 && k_desc[k + 1] == 0x02) { cut = k; break; }
+        CHECK(cut > 0);
+        memcpy(nohome, k_desc, cut);
+        nohome[cut] = 0xC0;
+        CHECK(generic_setup(ctx, nohome, cut + 1, 0x0111, 0x1420, NULL));      /* SteelSeries: no home */
+        memset(sel, 0, sizeof sel);
+        sel[0] = 0x01; sel[1] = sel[2] = sel[3] = sel[4] = 0x80; sel[5] = 0x08;
+        sel[7] = 0x10;                      /* button 13: Select on this pad */
+        pad_state_reset(&st);
+        CHECK(p->parse(ctx, sel, sizeof sel, &st) == PARSE_OK);
+        CHECK((st.buttons & 0x10000) && !(st.buttons & 0x1));   /* PS, not Create */
+        /* with a home button the Select stays Create */
+        CHECK(generic_setup(ctx, k_desc, sizeof k_desc, 0x0111, 0x1420, NULL));
+        pad_state_reset(&st);
+        CHECK(p->parse(ctx, sel, sizeof sel, &st) == PARSE_OK);
+        CHECK((st.buttons & 0x1) && !(st.buttons & 0x10000));
+    }
+
     {   /* A report count of four billion: refused at once. */
         static const unsigned char huge[] = {
             0x05, 0x09, 0x19, 0x01, 0x29, 0x10, 0x75, 0x01,
