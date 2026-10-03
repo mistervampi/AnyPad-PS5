@@ -109,6 +109,13 @@ static void on_state(void *ud, int slot, const pad_state *st)
     vpad_update(slot, st);
 }
 
+/* The menu's PS button: the same as holding PS on that pad. */
+#define PS_HOLD_MS 700
+static int web_press_ps(int slot)
+{
+    return g_vpad_ok && vpad_press_ps(slot, PS_HOLD_MS);
+}
+
 static void on_disconnect(void *ud, int slot)
 {
     (void)ud;
@@ -238,6 +245,7 @@ int main(void)
     wc.bt_reason = g_bt_reason;
     wc.log_path = LOG_PATH;
     wc.version = ANYPAD_VERSION;
+    wc.press_ps = web_press_ps;
     g_web = web_start(&wc, WEB_PORT);
 
     local_ip(ip);

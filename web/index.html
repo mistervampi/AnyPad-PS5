@@ -7,7 +7,7 @@
 <style>
 :root {
   --bg: #121212; --panel: #1c1c1c; --line: #2c2c2c; --text: #f2f2f2; --dim: #9a9a9a;
-  --orange: #ff8a00; --orange-dim: #7a4300; --ok: #43c46b; --bad: #ff5a4f;
+  --blue: #2f7df6; --orange: #ff8a00; --orange-dim: #7a4300; --ok: #43c46b; --bad: #ff5a4f;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text);
@@ -29,6 +29,7 @@ button { font: inherit; border: 1px solid var(--orange); background: transparent
   padding: 8px 14px; border-radius: 8px; cursor: pointer; }
 button.solid { background: var(--orange); color: #111; font-weight: 600; }
 button.danger { border-color: var(--bad); color: var(--bad); }
+button.blue { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
 button:disabled { opacity: .5; cursor: default; }
 .hint { color: var(--dim); font-size: 13px; }
 .pads { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
@@ -76,8 +77,11 @@ pre { margin: 10px 0 0; max-height: 320px; overflow: auto; font-size: 12px; colo
     <h2>Emparejar</h2>
     <div class="hint" style="margin-bottom:10px"><b style="color:var(--orange)">Antes de empezar:</b> crea un
       <b>usuario nuevo</b> en la consola. Cuando la consola detecte el mando y pregunte qué usuario lo usa,
-      elige ese usuario nuevo. Juega con tu usuario principal y pulsa el botón <b>PS</b> un momento: se usa el
-      mando del usuario creado. Si se queda en el usuario del DualSense, funciona en los menús pero los juegos no lo ven.</div>
+      elige ese usuario nuevo (ponle el nombre del mando, p. ej. «PS4» o «Wii»). Juega con tu usuario principal. Si tu mando <b>no es de PlayStation</b> (no tiene botón PS), pulsa el botón azul
+      <b>Pulsar PS</b> de «Mandos emparejados»: es como mantener PS. La consola mostrará un mensaje que se refiere
+      al DualSense, para recuperar la prioridad; con un mando que no es de PlayStation la prioridad vuelve al DualSense
+      y, para devolver el control al mando emparejado, vuelve a este menú y pulsa <b>Pulsar PS</b> otra vez. Si se queda en el usuario del DualSense,
+      funciona en los menús pero los juegos no lo ven.</div>
     <div class="row">
       <button id="pair" class="solid">Emparejar un mando (60 s)</button>
       <span id="pairinfo" class="hint">Pon el mando en modo emparejamiento después de pulsar.</span>
@@ -169,7 +173,7 @@ function renderPads(pads) {
   }
 }
 
-function renderPaired(list) {
+function renderPaired(list, pads) {
   const t = $("paired");
   t.replaceChildren();
   if (!list.length) { const r = t.insertRow(), d = r.insertCell(); d.className = "empty"; d.textContent = "Ninguno todavía."; return; }
@@ -178,6 +182,14 @@ function renderPaired(list) {
     a.append(el("span", "dot" + (p.connected ? " on" : "")), document.createTextNode(p.addr));
     b.textContent = (p.vid === "0000" && p.pid === "0000" ? "?" : p.vid + ":" + p.pid) + (p.le ? " · LE" : "");
     c.className = "r";
+    const live = (pads || []).find((x) => x.addr === p.addr);       /* connected: has a slot */
+    if (live) {
+      const ps = el("button", "blue", "Pulsar PS");
+      ps.title = "Para mandos que no tienen botón PS (los que no son de PlayStation): es como mantener pulsado PS";
+      ps.onclick = async () => { try { await api("POST", "/api/ps?slot=" + live.slot); } catch (e) {} };
+      c.appendChild(ps);
+      c.appendChild(document.createTextNode(" "));
+    }
     const f = el("button", "danger", "Olvidar");
     f.onclick = async () => {
       if (!confirm("¿Olvidar " + p.addr + "? Tendrás que emparejarlo de nuevo.")) return;
@@ -202,7 +214,7 @@ async function refresh() {
     if (s.bluetooth === "trying") $("status").textContent = "iniciando Bluetooth…";
     $("pair").disabled = s.pairing > 0 || s.bluetooth !== "ok";
     renderPads(s.pads);
-    renderPaired(s.paired);
+    renderPaired(s.paired, s.pads);
   } catch (e) {
     $("status").textContent = "sin conexión";
     $("status").className = "off";

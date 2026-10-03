@@ -106,12 +106,16 @@ typedef struct {
     int remove_when_found;      /* removed while being identified */
     int32_t handle;
     uint64_t dev;
+    pad_state last;             /* the pad's latest state, resent while PS is held from the menu */
+    long ps_until;              /* ms; PS is added to the frames until then (0: not held) */
+    int ps_active;              /* a frame with PS went out and the release is still to be sent */
 } vslot;
 
 static mbus_bind_fn g_bind;
 static int g_ready;                         /* vpad_init succeeded */
 static int32_t g_user = -1;
 static vslot g_slot[HOST_MAX_PADS];
+static void ps_tick(long now);
 
 /* The identification under way: one at a time, so a DEVICE_ADDED line can
  * only belong to the device just asked for. */
@@ -509,6 +513,7 @@ void vpad_poll(long now)
     int i;
 
     if (!g_ready) return;
+    ps_tick(now);
     if (g_pending >= 0) {
         log_source_read();
         finish_identification(now);
@@ -526,7 +531,9 @@ int vpad_live(int slot)
     return slot >= 0 && slot < HOST_MAX_PADS && g_slot[slot].st == VP_READY;
 }
 
-void vpad_update(int slot, const pad_state *st)
+/* One frame to the virtual pad: the pad's state, with PS added while the menu
+ * is "holding" it. */
+static void send_frame(int slot, const pad_state *st)
 {
     ScePadData d;
     struct timespec ts;
@@ -534,7 +541,7 @@ void vpad_update(int slot, const pad_state *st)
 
     if (!vpad_live(slot)) return;
     memset(&d, 0, sizeof d);
-    d.buttons = st->buttons;
+    d.buttons = st->buttons | (g_slot[slot].ps_until ? PAD_PS : 0);
     d.lx = st->lx;
     d.ly = st->ly;
     d.rx = st->rx;
@@ -569,6 +576,39 @@ void vpad_update(int slot, const pad_state *st)
         /* Stop feeding a device that refuses: it may not be ours any more. */
         log_line("slot %d: the virtual pad refused input, stopped feeding it", slot);
         g_slot[slot].st = VP_FAILED;
+    }
+}
+
+void vpad_update(int slot, const pad_state *st)
+{
+    if (!vpad_live(slot)) return;
+    g_slot[slot].last = *st;
+    send_frame(slot, st);
+}
+
+/* Holds PS on a virtual pad for `ms`, as pressing the PS button on the pad
+ * would: the console hands the pad over to its user, or opens its menu. */
+int vpad_press_ps(int slot, int ms)
+{
+    if (!vpad_live(slot) || ms <= 0) return 0;
+    g_slot[slot].ps_until = now_ms() + ms;
+    g_slot[slot].ps_active = 1;
+    log_line("slot %d: PS pressed from the menu (%d ms)", slot, ms);
+    send_frame(slot, &g_slot[slot].last);
+    return 1;
+}
+
+/* Keeps the PS frames going (the pad may be silent) and ends the press. */
+static void ps_tick(long now)
+{
+    int i;
+
+    for (i = 0; i < HOST_MAX_PADS; i++) {
+        vslot *v = &g_slot[i];
+        if (!v->ps_active || v->st != VP_READY) continue;
+        if (v->ps_until && now >= v->ps_until) v->ps_until = 0;       /* released */
+        send_frame(i, &v->last);
+        if (!v->ps_until) v->ps_active = 0;
     }
 }
 

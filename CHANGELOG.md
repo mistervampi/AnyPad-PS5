@@ -5,6 +5,37 @@ version is set in `src/version.h` and is also in the first line of the log, in
 the start-up notification, on the web page, and in the binary
 (`strings AnyPad-PS5-*.elf | grep anypad-version`).
 
+## 0.5.5-beta
+
+- Primera beta. Base: 0.4.7-alpha, que encuentra el DS4 en la consola; la 0.5.4 (= 0.4.7 + botón «Pulsar PS») se confirmó que funciona y pasa a beta.
+- El botón **«Pulsar PS»** (azul) se mueve a «Mandos emparejados», a la izquierda de «Olvidar», y aparece en los mandos conectados. Solo hace falta con mandos que no tienen botón PS (los que no son de PlayStation).
+- Textos de la web y del README: al pulsarlo la consola muestra un mensaje del sistema que se refiere al DualSense (recuperar la prioridad); con un mando que no es de PlayStation la prioridad vuelve al DualSense, y para devolver el control al mando emparejado hay que volver al menú y pulsar «Pulsar PS» otra vez.
+- Cambio quirúrgico: solo `web/index.html` (y la versión); la búsqueda y el Bluetooth no se tocan.
+
+## 0.5.4-alpha
+
+- Parte de la 0.4.7 (la que encuentra el DS4 en la consola del usuario) y añade SOLO el botón «Pulsar PS» por mando y los hasta 4 mandos. Se descartan los cambios de la búsqueda de mandos de 0.5.1/0.5.2 (vigilante de 14 s, cancelar al arrancar/parar, esperar ante 0x0c), porque con la 0.5.2 el DS4 dejó de encontrarse y con la 0.4.7 sí.
+- Esos cambios pueden volver a probarse de uno en uno, solo si el usuario lo pide.
+
+## 0.5.3-alpha
+
+- Se ELIMINA el botón «Reiniciar Bluetooth» y el `HCI_Reset` (0.5.2): al probarlo en la consola el usuario se quedó sin DualSense; reiniciar el controlador del chip es peligroso. No se vuelve a añadir.
+- Contiene lo de 0.5.0 (botón «Pulsar PS» por mando, hasta 4 mandos) y 0.5.1 (la búsqueda no se atasca, limpieza de búsqueda y enlaces huérfanos al arrancar).
+
+## 0.5.1-alpha
+
+- La búsqueda de mandos ya no se queda atascada: si el aviso de "fin de búsqueda" del chip se pierde, a los 14 s se cancela y se busca otra vez (antes quedaba parada hasta 45 s, y el mando "no aparecía").
+- Al arrancar se cancela cualquier búsqueda que una ejecución anterior cortada dejara en el chip; si el chip contesta "comando no permitido" (0x0c) se espera a que acabe en vez de repetir la orden decenas de veces; al parar AnyPad no se deja ninguna búsqueda en marcha.
+- Un aviso de fin de búsqueda dañado (longitud errónea) ya no se toma por bueno.
+- Test nuevo `test_inquiry_watchdog` (probado con mutación).
+
+## 0.5.0-alpha
+
+- Base: 0.4.7-alpha (se descarta el cambio de Select como PS de la 0.4.8).
+- Botón **«Pulsar PS»** en la tarjeta de cada mando del menú web: equivale a mantener pulsado PS en ese mando (envía PS al mando virtual durante 700 ms). Sirve para activar uno u otro mando como principal. Nuevo `POST /api/ps?slot=N`.
+- Hasta 4 mandos a la vez (límite de `HOST_MAX_PADS`), documentado; la web explica cómo nombrar los usuarios de la consola según el mando.
+- README: recomendación de nombrar el usuario como el mando, varios mandos, "igual en cualquier consola", cuenta de X @elmonomalvad0.
+
 ## 0.4.7-alpha
 
 - Texto corregido sobre el usuario creado: se juega con el usuario principal y se pulsa PS un momento para usar el mando del usuario creado (notificación de arranque, web, README, notas de la release).

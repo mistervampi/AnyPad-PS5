@@ -48,11 +48,17 @@ The full list of controllers, one by one, with their status, is in
 Games do not take the controller from the user who owns your DualSense, so the pad has to belong to
 another user. So:
 
-1. **Create a new user** on the console (Settings → Users).
+1. **Create a new user** on the console (Settings → Users). Tip: **name the user after the controller** ("PS4" for a DualShock 4, "Wii" for a Wii pad, "Xbox"…) so you always know which user holds which pad.
 2. Run AnyPad PS5 and pair the controller.
 3. When the console detects the pad and asks which user it is for, **choose the new user**.
-4. Play with your main user as usual and, when you want the DS4, **press the PS button briefly**: the
+4. Play with your main user as usual. A PlayStation pad (DualShock 4 / 3) has its own PS button: press it.
+   **A pad without a PS button** (anything that is not a PlayStation pad) uses the blue **"Pulsar PS"** button
+   of the AnyPad menu (in "Mandos emparejados", to the left of "Olvidar"), which is the same as holding PS. The
    pad of the created user is then the one used.
+
+   When you press it, the console shows a system message again. It refers to the DualSense, to take back the
+   priority: with a pad that is not from PlayStation, the priority goes back to the DualSense. To give the control
+   back to the paired pad, return to the AnyPad menu and press **"Pulsar PS"** again.
 
 With the same user as the DualSense, the pad works in the console menus but games and
 emulators do not see it.
@@ -84,6 +90,21 @@ AnyPad PS5 can be added to your payload loader's autoload list like any other pa
 A payload killed without closing its Bluetooth links can leave a stale link on the chip; this
 version closes stale links when it finds one, but a clean stop is still best. The *Salir* button
 only leaves the page and keeps AnyPad running.
+
+## Several controllers at once
+
+AnyPad PS5 handles **up to 4 controllers at the same time**, each with its own profile (a DualShock 4
+next to an Xbox pad and a Switch Pro, for example). The menu lists every paired pad, and each
+connected one has a blue **"Pulsar PS"** button to make one or another the active pad. The console itself seems to accept 4
+controllers in total, so the DualSense counts too (this limit is not verified on a console). Give each pad
+its own console user, named after it.
+
+## The same on any console
+
+Nothing in AnyPad PS5 is tied to one console or one network. The menu address shown in the start-up
+notification is read from the console's own network settings, the *Media* row entry opens
+`http://127.0.0.1:8095/` (the console itself), and the page is served on port 8095. From another device
+you need to be on the same local network (private ranges 10.x, 172.16-31.x, 192.168.x).
 
 ## Mapping a controller with no profile
 
@@ -181,11 +202,17 @@ La lista completa de mandos, uno por uno y con su estado, está en [COMPATIBILIT
 Los juegos no toman el mando del usuario al que pertenece tu DualSense, así que el mando tiene que
 pertenecer a otro usuario. Por eso:
 
-1. **Crea un usuario nuevo** en la consola (Ajustes → Usuarios).
+1. **Crea un usuario nuevo** en la consola (Ajustes → Usuarios). Consejo: **ponle al usuario el nombre del mando** («PS4» para un DualShock 4, «Wii» para un mando de Wii, «Xbox»…) para saber siempre qué usuario tiene cada mando.
 2. Ejecuta AnyPad PS5 y empareja el mando.
 3. Cuando la consola detecte el mando y pregunte para qué usuario es, **elige el usuario nuevo**.
-4. Juega con tu usuario principal como siempre y, cuando quieras usar el DS4, **pulsa el botón PS un
-   momento**: se usa el mando del usuario creado.
+4. Juega con tu usuario principal como siempre. Un mando de PlayStation (DualShock 4 / 3) tiene su propio
+   botón PS: púlsalo. **Un mando sin botón PS** (cualquiera que no sea de PlayStation) usa el botón azul
+   **«Pulsar PS»** del menú de AnyPad (en «Mandos emparejados», a la izquierda de «Olvidar»), que equivale a
+   mantener pulsado PS. Entonces se usa el mando del usuario creado.
+
+   Al pulsarlo, la consola vuelve a mostrar un mensaje del sistema. Se refiere al DualSense, para recuperar la
+   prioridad: con un mando que no es de PlayStation, la prioridad vuelve al DualSense. Para devolver el control
+   al mando emparejado, vuelve al menú de AnyPad y pulsa **«Pulsar PS»** otra vez.
 
 Con el mismo usuario del DualSense, el mando funciona en los menús de la consola pero los
 juegos y emuladores no lo ven.
@@ -217,6 +244,21 @@ AnyPad PS5 se puede añadir a la lista de autoload de tu cargador de payloads, c
 Un payload cortado sin cerrar sus enlaces Bluetooth puede dejar un enlace huérfano en el chip; esta
 versión los cierra cuando los encuentra, pero lo mejor es parar limpio. El botón *Salir* solo
 abandona la página y deja AnyPad funcionando.
+
+## Varios mandos a la vez
+
+AnyPad PS5 maneja **hasta 4 mandos a la vez**, cada uno con su propio perfil (un DualShock 4 junto a un
+mando Xbox y un Switch Pro, por ejemplo). El menú lista cada mando emparejado y cada
+conectado tiene un botón azul **«Pulsar PS»** para activar uno u otro como mando principal. La propia consola parece admitir 4 mandos
+en total, así que el DualSense también cuenta (este límite no está verificado en consola). Dale a cada
+mando su propio usuario de la consola, con su nombre.
+
+## Igual en cualquier consola
+
+Nada de AnyPad PS5 está atado a una consola ni a una red. La dirección del menú que muestra la
+notificación de arranque se lee de la configuración de red de la propia consola, la entrada de
+*Contenido multimedia* abre `http://127.0.0.1:8095/` (la propia consola) y la página se sirve en el puerto
+8095. Desde otro dispositivo hace falta estar en la misma red local (rangos privados 10.x, 172.16-31.x, 192.168.x).
 
 ## Mapear un mando sin perfil
 
