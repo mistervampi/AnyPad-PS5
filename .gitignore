@@ -1,0 +1,8 @@
+# Build and test outputs (rebuilt by make / tools/build-elf-docker.sh).
+/build/
+*.o
+# Editor and system noise.
+.DS_Store
+*.swp
+# The released ELFs and their hashes in dist/ ARE tracked on purpose:
+# they record exactly what was delivered to the console.

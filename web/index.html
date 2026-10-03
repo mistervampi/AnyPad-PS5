@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AnyPad PS5</title>
+<style>
+:root {
+  --bg: #121212; --panel: #1c1c1c; --line: #2c2c2c; --text: #f2f2f2; --dim: #9a9a9a;
+  --orange: #ff8a00; --orange-dim: #7a4300; --ok: #43c46b; --bad: #ff5a4f;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.45 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+header { display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  border-bottom: 2px solid var(--orange); background: #181818; position: sticky; top: 0; }
+header h1 { margin: 0; font-size: 20px; letter-spacing: .5px; }
+header h1 span { color: var(--orange); }
+#ver { color: var(--dim); font-size: 12px; }
+#status { margin-left: auto; font-size: 13px; padding: 3px 10px; border-radius: 99px;
+  border: 1px solid var(--line); color: var(--dim); }
+#status.on { border-color: var(--ok); color: var(--ok); }
+#status.off { border-color: var(--bad); color: var(--bad); }
+main { max-width: 960px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+section h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--orange); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button { font: inherit; border: 1px solid var(--orange); background: transparent; color: var(--orange);
+  padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+button.solid { background: var(--orange); color: #111; font-weight: 600; }
+button.danger { border-color: var(--bad); color: var(--bad); }
+button:disabled { opacity: .5; cursor: default; }
+.hint { color: var(--dim); font-size: 13px; }
+.pads { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.pad { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: #161616; }
+.pad .top { display: flex; justify-content: space-between; align-items: baseline; }
+.pad .name { font-weight: 600; }
+.pad .slot { color: #111; background: var(--orange); border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 700; }
+.pad .meta { color: var(--dim); font-size: 12px; margin: 2px 0 10px; }
+.viz { display: flex; gap: 14px; align-items: center; }
+.stick { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--line); position: relative; }
+.stick i { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--orange); }
+.trig { width: 10px; height: 64px; border: 1px solid var(--line); border-radius: 4px; position: relative; overflow: hidden; }
+.trig b { position: absolute; bottom: 0; left: 0; right: 0; background: var(--orange); }
+.btns { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; min-height: 24px; }
+.btns span { font-size: 11px; padding: 2px 7px; border-radius: 99px; background: var(--orange-dim); color: #ffd3a1; }
+.batt { margin-top: 10px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.batt b { display: block; height: 100%; background: var(--ok); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+td { padding: 8px 4px; border-top: 1px solid var(--line); }
+td.r { text-align: right; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--line); margin-right: 6px; }
+.dot.on { background: var(--ok); }
+pre { margin: 10px 0 0; max-height: 320px; overflow: auto; font-size: 12px; color: #d8d8d8;
+  background: #0d0d0d; border: 1px solid var(--line); border-radius: 8px; padding: 10px; white-space: pre-wrap; }
+.empty { color: var(--dim); font-size: 14px; padding: 6px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1><span>Any</span>Pad PS5</h1><div id="ver"></div>
+  <div id="status">conectando…</div>
+</header>
+
+<main>
+  <section id="btfail" hidden>
+    <h2>Bluetooth no disponible</h2>
+    <div id="btreason" class="hint"></div>
+    <div class="row" style="margin-top:10px">
+      <button id="retry" class="solid">Reintentar Bluetooth</button>
+      <span class="hint">El resto del menú y el log siguen funcionando.</span>
+    </div>
+  </section>
+
+    <section>
+    <h2>Emparejar</h2>
+    <div class="hint" style="margin-bottom:10px"><b style="color:var(--orange)">Antes de empezar:</b> crea un
+      <b>usuario nuevo</b> en la consola. Cuando la consola detecte el mando y pregunte qué usuario lo usa,
+      elige ese usuario nuevo. Juega con tu usuario principal y pulsa el botón <b>PS</b> un momento: se usa el
+      mando del usuario creado. Si se queda en el usuario del DualSense, funciona en los menús pero los juegos no lo ven.</div>
+    <div class="row">
+      <button id="pair" class="solid">Emparejar un mando (60 s)</button>
+      <span id="pairinfo" class="hint">Pon el mando en modo emparejamiento después de pulsar.</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Mandos conectados</h2>
+    <div id="pads" class="pads"></div>
+  </section>
+
+  <section>
+    <h2>Mandos emparejados</h2>
+    <table id="paired"></table>
+  </section>
+
+  <section>
+    <h2>AnyPad PS5</h2>
+    <div class="row">
+      <button id="showlog">Ver log</button>
+      <button id="exit" class="solid">Salir</button>
+      <span id="exithint" class="hint">Cierra esta página; AnyPad PS5 sigue funcionando.</span>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button id="stop" class="danger">Apagar AnyPad PS5 (avanzado)</button>
+      <span class="hint">Desconecta los mandos y deja el Bluetooth como estaba. Hazlo antes de volver a lanzar el ELF.</span>
+    </div>
+    <pre id="log" hidden></pre>
+  </section>
+</main>
+
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const NAMES = { cross: "✕", circle: "○", square: "□", triangle: "△", l1: "L1", r1: "R1", l2: "L2", r2: "R2",
+  l3: "L3", r3: "R3", up: "↑", down: "↓", left: "←", right: "→", options: "OPTIONS", create: "CREATE",
+  ps: "PS", touchpad: "PANEL" };
+async function api(method, path) {
+  const r = await fetch(path, { method, headers: { "X-AnyPad": "1" } });
+  if (!r.ok) throw new Error("http " + r.status);
+  return path === "/api/log" ? r.text() : r.json();
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function stick(x, y) {
+  const s = el("div", "stick"), d = el("i");
+  d.style.left = (x / 255 * 100) + "%";
+  d.style.top = (y / 255 * 100) + "%";
+  s.appendChild(d);
+  return s;
+}
+
+function trigger(v) {
+  const t = el("div", "trig"), b = el("b");
+  b.style.height = (v / 255 * 100) + "%";
+  t.appendChild(b);
+  return t;
+}
+
+function renderPads(pads) {
+  const box = $("pads");
+  box.replaceChildren();
+  if (!pads.length) { box.appendChild(el("div", "empty", "Ninguno. Enciende un mando emparejado o empareja uno nuevo.")); return; }
+  for (const p of pads) {
+    const c = el("div", "pad"), top = el("div", "top");
+    top.append(el("span", "name", p.profile), el("span", "slot", "J" + p.slot));
+    c.append(top, el("div", "meta", p.addr + " · " + p.vid + ":" + p.pid));
+    const viz = el("div", "viz");
+    viz.append(trigger(p.l2), stick(p.lx, p.ly), stick(p.rx, p.ry), trigger(p.r2));
+    c.appendChild(viz);
+    const btns = el("div", "btns");
+    for (const b of p.buttons) btns.appendChild(el("span", "", NAMES[b] || b));
+    c.appendChild(btns);
+    if (p.battery >= 0) {
+      const bat = el("div", "batt"), fill = el("b");
+      fill.style.width = p.battery + "%";
+      bat.title = "Batería " + p.battery + "%" + (p.charging ? " (cargando)" : "");
+      bat.appendChild(fill);
+      c.appendChild(bat);
+    }
+    box.appendChild(c);
+  }
+}
+
+function renderPaired(list) {
+  const t = $("paired");
+  t.replaceChildren();
+  if (!list.length) { const r = t.insertRow(), d = r.insertCell(); d.className = "empty"; d.textContent = "Ninguno todavía."; return; }
+  for (const p of list) {
+    const r = t.insertRow(), a = r.insertCell(), b = r.insertCell(), c = r.insertCell();
+    a.append(el("span", "dot" + (p.connected ? " on" : "")), document.createTextNode(p.addr));
+    b.textContent = (p.vid === "0000" && p.pid === "0000" ? "?" : p.vid + ":" + p.pid) + (p.le ? " · LE" : "");
+    c.className = "r";
+    const f = el("button", "danger", "Olvidar");
+    f.onclick = async () => {
+      if (!confirm("¿Olvidar " + p.addr + "? Tendrás que emparejarlo de nuevo.")) return;
+      try { await api("POST", "/api/forget?addr=" + p.addr); } catch (e) {}
+      refresh();
+    };
+    c.appendChild(f);
+  }
+}
+
+async function refresh() {
+  try {
+    const s = await api("GET", "/api/state");
+    $("ver").textContent = s.version;
+    $("status").textContent = s.running ? "en marcha" : "sin Bluetooth";
+    $("status").className = s.running ? "on" : "off";
+    $("pairinfo").textContent = s.pairing > 0
+      ? "Buscando mandos… " + s.pairing + " s. Pon el mando en modo emparejamiento."
+      : "Pon el mando en modo emparejamiento después de pulsar.";
+    $("btfail").hidden = s.bluetooth !== "failed";
+    $("btreason").textContent = s.reason || "";
+    if (s.bluetooth === "trying") $("status").textContent = "iniciando Bluetooth…";
+    $("pair").disabled = s.pairing > 0 || s.bluetooth !== "ok";
+    renderPads(s.pads);
+    renderPaired(s.paired);
+  } catch (e) {
+    $("status").textContent = "sin conexión";
+    $("status").className = "off";
+  }
+}
+
+$("retry").onclick = async () => { try { await api("POST", "/api/retry"); } catch (e) {} refresh(); };
+$("pair").onclick = async () => { try { await api("POST", "/api/pair"); } catch (e) {} refresh(); };
+$("exit").onclick = () => {
+  /* Only leaves the page: AnyPad PS5 keeps running. Browsers refuse to close a page they did
+     not open from a script, so fall back to going back, then say how to leave. */
+  try { window.close(); } catch (e) {}
+  setTimeout(() => { if (history.length > 1) history.back(); }, 250);
+  setTimeout(() => { $("exithint").textContent = "Si no se ha cerrado, pulsa el botón PS del mando para volver al menú de la consola."; }, 800);
+};
+$("stop").onclick = async () => {
+  if (!confirm("¿Detener AnyPad PS5? Los mandos conectados se desconectarán.")) return;
+  try { await api("POST", "/api/stop"); } catch (e) {}
+  $("status").textContent = "deteniéndose";
+};
+$("showlog").onclick = async () => {
+  const pre = $("log");
+  if (!pre.hidden) { pre.hidden = true; $("showlog").textContent = "Ver log"; return; }
+  try { pre.textContent = await api("GET", "/api/log"); } catch (e) { return; }
+  pre.hidden = false;
+  pre.scrollTop = pre.scrollHeight;
+  $("showlog").textContent = "Ocultar log";
+};
+
+refresh();
+setInterval(refresh, 1000);
+</script>
+</body>
+</html>
