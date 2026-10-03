@@ -67,6 +67,5 @@ int    sim_scan(const sim_t *s);           /* the controller's scan enable */
 void   sim_set_scan(sim_t *s, int v);     /* someone else changes it */
 void   sim_stale_link(sim_t *s, unsigned handle);   /* the chip still holds the pad's link from an earlier run */
 int    sim_stale_cleared(const sim_t *s);
-int    sim_inquiries(const sim_t *s);      /* Inquiry commands the host has sent */
 
 #endif

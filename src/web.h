@@ -29,8 +29,6 @@ typedef struct {
     /* The user's own pad: returns 1 and its buttons if readable, else 0 and
      * the reason in *err. NULL: not available. */
     int (*physical)(uint32_t *buttons, int *err);
-    /* Presses PS on pad `slot` (0-based). Returns 1 if done. NULL: not available. */
-    int (*press_ps)(int slot);
 } web_cfg;
 
 /* Listens on `port` on every interface. Returns NULL if it cannot. */

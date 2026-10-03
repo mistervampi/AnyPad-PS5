@@ -33,15 +33,6 @@ static int fake_physical(uint32_t *buttons, int *err)
     return g_phys_readable;
 }
 
-static int g_ps_calls, g_ps_slot = -1, g_ps_result = 1;
-
-static int fake_press_ps(int slot)
-{
-    g_ps_calls++;
-    g_ps_slot = slot;
-    return g_ps_result;
-}
-
 static void run(int ms)
 {
     long end = sim_now() + ms;
@@ -131,7 +122,6 @@ int main(void)
     wc.version = "test";
     wc.combo_text = "L2 + R2 + OPTIONS";
     wc.physical = fake_physical;
-    wc.press_ps = fake_press_ps;
     g_web = web_start(&wc, PORT);
     CHECK(g_host && g_web);
     if (!g_host || !g_web) return 1;
@@ -192,20 +182,6 @@ int main(void)
     printf("the log tail\n");
     get("GET", "/api/log", out, sizeof out);
     CHECK(strstr(out, "line two") != NULL);
-
-    printf("the PS button of a pad\n");
-    get("POST", "/api/ps?slot=1", out, sizeof out);
-    CHECK(strstr(out, "{\"ok\":true}") != NULL && g_ps_calls == 1 && g_ps_slot == 0);   /* slots are 1-based in the page */
-    get("POST", "/api/ps?slot=9", out, sizeof out);
-    CHECK(strncmp(out, "HTTP/1.1 400", 12) == 0 && g_ps_calls == 1);
-    get("POST", "/api/ps?slot=0", out, sizeof out);
-    CHECK(strncmp(out, "HTTP/1.1 400", 12) == 0 && g_ps_calls == 1);
-    g_ps_result = 0;                                    /* no live virtual pad there */
-    get("POST", "/api/ps?slot=2", out, sizeof out);
-    CHECK(strncmp(out, "HTTP/1.1 404", 12) == 0 && g_ps_calls == 2);
-    g_ps_result = 1;
-    get_with("POST /api/ps?slot=1 HTTP/1.1\r\nHost: 10.0.0.1\r\n\r\n", out, sizeof out);   /* no X-AnyPad header */
-    CHECK(strncmp(out, "HTTP/1.1 403", 12) == 0 && g_ps_calls == 2);
 
     printf("forgetting the pad\n");
     get("POST", "/api/forget?addr=zz", out, sizeof out);

@@ -393,8 +393,3 @@ Las regresiones atribuidas a 0.4.2/0.4.3 probablemente eran este mismo efecto (e
 ## Prueba 12 (0.4.1, usuario nuevo): **FUNCIONA en juegos**
 
 El usuario creó un usuario nuevo en la consola, al detectar el DS4 la consola preguntó qué usuario lo usa y se lo asignó a ese usuario nuevo: **el mando funciona** en los juegos (el usuario juega con su usuario principal y pulsa PS un momento: se usa el mando del usuario creado). Con el usuario principal (el del DualSense) solo funcionaba en el sistema, no en juegos ni emuladores. Es decir, la causa del "los juegos no lo ven" era el reparto de mandos por usuario, no un fallo de AnyPad: no hace falta inyección ni la opción `bind_user`. Requisito de uso, ahora en el aviso de arranque, la web y el README: crear un usuario nuevo y asignarle el mando.
-
-## Prueba 13 (0.5.0): "vuelve a pasar": no detecta el mando
-
-Log: tras `Bluetooth ready`, al pulsar Emparejar el chip contestó `status 0x0c` (comando no permitido: ya había una búsqueda en marcha, dejada por una ejecución anterior cortada; arranque con `stale lock, taking it over`) a ~25 órdenes de búsqueda seguidas; después `finished (status 0x0a/0xe3/0xee)` (eventos dañados) y ningún resultado hasta 45 s más tarde. Causa: estado que una ejecución cortada deja en el chip (búsqueda y/o enlaces) más la pérdida del aviso de fin de búsqueda, que dejaba `inquiring=1` sin límite. No es un fallo de una versión concreta: les pasa a todas cuando la anterior no se paró limpia.
-Arreglo en 0.5.1: cancelar al arrancar, no repetir ante 0x0c, vigilante de 14 s, validar la longitud del evento de fin de búsqueda, cancelar al parar.

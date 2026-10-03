@@ -241,33 +241,6 @@ static void test_stale_link(void)
     sim_free(sim);
 }
 
-/* The chip's end-of-inquiry event can be lost: the search must carry on by
- * itself (the simulator never sends one). */
-static void test_inquiry_watchdog(void)
-{
-    static const unsigned char addr[6] = { 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F };
-    sim_pad pad;
-    sim_t *sim;
-    host_t *h;
-    seen s;
-
-    printf("a search whose end event is lost carries on\n");
-    unlink(DB);
-    memset(&pad, 0, sizeof pad);
-    memset(&s, 0, sizeof s);
-    pad.mode = SIM_RECONNECT;               /* no pad in pairing mode: nothing is found */
-    memcpy(pad.addr, addr, 6);
-    sim = sim_new(&pad);
-    h = open_host(sim, &s);
-    CHECK(h != NULL);
-    if (!h) { sim_free(sim); return; }
-    host_pair(h, 60);
-    run(h, 50000);
-    CHECK(sim_inquiries(sim) >= 3);         /* started again after the watchdog, not once and stuck */
-    host_close(h);
-    sim_free(sim);
-}
-
 static void test_unknown_pad_refused(void)
 {
     static const unsigned char addr[6] = { 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
@@ -539,7 +512,6 @@ int main(void)
     test_reconnect();
     test_pairing(7);
     test_stale_link();
-    test_inquiry_watchdog();
     test_unknown_pad_refused();
     test_transport_lost();
     test_restore();

@@ -300,11 +300,6 @@ static void handle(web_t *w, int fd, char *req)
         if (!parse_addr(path + 17, a)) respond_text(fd, 400, "{\"error\":\"address\"}");
         else if (!host_forget(h, a)) respond_text(fd, 404, "{\"error\":\"not paired\"}");
         else respond_text(fd, 200, "{\"ok\":true}");
-    } else if (strcmp(method, "POST") == 0 && strncmp(path, "/api/ps?slot=", 13) == 0) {
-        int n = atoi(path + 13);
-        if (n < 1 || n > HOST_MAX_PADS) respond_text(fd, 400, "{\"error\":\"slot\"}");
-        else if (!w->cfg.press_ps || !w->cfg.press_ps(n - 1)) respond_text(fd, 404, "{\"error\":\"no pad\"}");
-        else respond_text(fd, 200, "{\"ok\":true}");
     } else if (strcmp(method, "POST") == 0 && strcmp(path, "/api/retry") == 0) {
         if (*w->cfg.bt_state == WEB_BT_FAILED) {
             log_line("web: Bluetooth retry requested");

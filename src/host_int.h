@@ -244,7 +244,6 @@ struct host {
     long pair_until;
     long purge_at;                  /* when stale links were last cleared */
     int inquiring;
-    long inq_started;               /* when the inquiry in progress began, for the watchdog */
     int dead;               /* the transport is gone */
     int diag_done;          /* the transport's self-report was logged */
     int scan_orig, scan_set; /* page scan as found, and as we set it (-1: untouched) */

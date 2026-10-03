@@ -939,8 +939,7 @@ static void on_event(host_t *h, const unsigned char *ev, int len)
     if (len < 2) return;
     switch (ev[0]) {
     case 0x01:  /* Inquiry Complete */
-        if (len != 3) break;            /* a damaged event: not an end of inquiry */
-        log_line("inquiry: finished (status %#04x)", ev[2]);
+        log_line("inquiry: finished (status %#04x)", len > 2 ? ev[2] : 0xFF);
         h->inquiring = 0;
         break;
 
@@ -1044,16 +1043,7 @@ static void on_event(host_t *h, const unsigned char *ev, int len)
     case 0x0F:  /* Command Status: status, credits, opcode */
         if (len >= 6 && le16(ev + 4) == OP_INQUIRY) {
             log_line("inquiry: controller answered status %#04x", ev[2]);
-            if (ev[2] == 0x0C) {
-                /* Command disallowed: an inquiry is already running, probably one
-                 * an earlier run left on the chip. Stop it and wait for its end
-                 * instead of asking again at once. */
-                h->inquiring = 1;
-                h->inq_started = now_ms();
-                send_cmd(h, OP_INQUIRY_CANCEL, NULL, 0);
-            } else if (ev[2] != 0) {
-                h->inquiring = 0;
-            }
+            if (ev[2] != 0) h->inquiring = 0;
         }
         if (len < 6 || ev[2] == 0) break;
         if (le16(ev + 4) == OP_CREATE_CONNECTION && ev[2] == 0x0B) purge_stale_links(h);
@@ -1261,7 +1251,6 @@ static void start_inquiry(host_t *h)
 
     if (send_cmd(h, OP_INQUIRY, inq, 5)) {
         h->inquiring = 1;
-        h->inq_started = now_ms();
         log_line("inquiry: started");
     } else {
         static int fails;
@@ -1302,13 +1291,6 @@ void host_poll(host_t *h, int timeout_ms)
     }
 
     /* Keep searching through the pairing window, one pad at a time. */
-    /* The end-of-inquiry event can be lost on the way (another reader of the
-     * chip's events takes a piece of it): an inquiry lasts about 10 s, so one
-     * that has gone on for 14 s is over, and the search must carry on. */
-    if (h->inquiring && now - h->inq_started > 14000) {
-        send_cmd(h, OP_INQUIRY_CANCEL, NULL, 0);
-        h->inquiring = 0;
-    }
     if (now < h->pair_until && !h->inquiring && !linking) start_inquiry(h);
     if (now >= h->pair_until && h->inquiring) {
         send_cmd(h, OP_INQUIRY_CANCEL, NULL, 0);
@@ -1511,10 +1493,6 @@ host_t *host_open(hci_t hci, const char *db_path, const host_events *ev)
         free(h);
         return NULL;
     }
-    /* An earlier run that was cut off may have left a search going on the
-     * chip, which then refuses ours ("command disallowed") for a while. Ending
-     * a search that is not running is harmless. */
-    send_cmd(h, OP_INQUIRY_CANCEL, NULL, 0);
     return h;
 }
 
@@ -1536,7 +1514,6 @@ void host_close(host_t *h)
         if (!any || now_ms() >= deadline) break;
         pump(h, 50);
     }
-    if (!h->dead && h->inquiring) send_cmd(h, OP_INQUIRY_CANCEL, NULL, 0);    /* leave no search running */
     if (!h->dead) restore(h);
     if (h->hci.ops->close) h->hci.ops->close(h->hci.ctx);
     free(h);
