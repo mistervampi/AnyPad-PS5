@@ -5,6 +5,11 @@ version is set in `src/version.h` and is also in the first line of the log, in
 the start-up notification, on the web page, and in the binary
 (`strings AnyPad-PS5-*.elf | grep anypad-version`).
 
+## 0.5.7-beta
+
+- Añade compatibilidad con el mando GameSir SuperNova en modo Bluetooth DS4. Se corrige la consulta SDP para buscar los registros de servicio y leer sus atributos, incluido el descriptor HID. Probado en una PS5 con firmware 13.60.
+- El mando se conecta y funciona como mando DS4; en la prueba no cambió al informe completo, por lo que algunas funciones adicionales pueden no estar disponibles.
+
 ## 0.5.6-beta
 
 - Corrige el arranque en firmwares recientes: `sceAppInstUtilAppInstallTitleDir` se resuelve en tiempo de ejecucion por su NID, con `sceAppInstUtilAppInstallAll` como alternativa. Asi se evita exigir que el cargador resuelva esa importacion antes de iniciar el ELF.

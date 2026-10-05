@@ -593,30 +593,48 @@ static int sdp_find_descriptor(const unsigned char *p, int n, const unsigned cha
 
 static void sdp_send_request(host_t *h, link_t *l)
 {
-    /* Service Search Attribute requests, each answer up to 256 bytes:
-     *   ids:  {UUID 0x1200 PnP Information}, attributes 0x0200-0x0205
-     *   desc: {UUID 0x1124 HID}, attribute 0x0206 HIDDescriptorList */
-    static const unsigned char ids[] = {
-        0x35, 0x03, 0x19, 0x12, 0x00,  0x01, 0x00,
-        0x35, 0x05, 0x0A, 0x02, 0x00, 0x02, 0x05,
-    };
-    static const unsigned char desc[] = {
-        0x35, 0x03, 0x19, 0x11, 0x24,  0x01, 0x00,
-        0x35, 0x03, 0x09, 0x02, 0x06,
-    };
-    const unsigned char *body = l->sdp_query == SDP_Q_IDS ? ids : desc;
-    int blen = l->sdp_query == SDP_Q_IDS ? (int)sizeof ids : (int)sizeof desc;
-    unsigned char req[64];
+    unsigned char req[64], body[32];
+    unsigned pdu;
     int n = 5;
 
-    memcpy(req + n, body, (size_t)blen);
-    n += blen;
+    if (l->sdp_phase == SDP_PHASE_SEARCH) {
+        uint16_t uuid = l->sdp_query == SDP_Q_IDS ? 0x1200 : 0x1124;
+        static const unsigned char prefix[] = { 0x35, 0x03, 0x19 };
+
+        memcpy(body, prefix, sizeof prefix);
+        body[3] = (unsigned char)(uuid >> 8);
+        body[4] = (unsigned char)uuid;
+        body[5] = 0x00;
+        body[6] = SDP_MAX_HANDLES;
+        pdu = 0x02;                         /* ServiceSearchRequest */
+        memcpy(req + n, body, 7);
+        n += 7;
+    } else {
+        uint32_t handle = l->sdp_handles[l->sdp_handle_idx];
+
+        body[0] = (unsigned char)(handle >> 24);
+        body[1] = (unsigned char)(handle >> 16);
+        body[2] = (unsigned char)(handle >> 8);
+        body[3] = (unsigned char)handle;
+        body[4] = 0x03;
+        body[5] = 0xF0;                     /* accept up to 1008 attribute bytes */
+        body[6] = 0x35;
+        body[7] = 0x05;
+        body[8] = 0x0A;
+        body[9] = 0x00;
+        body[10] = 0x00;
+        body[11] = 0xFF;
+        body[12] = 0xFF;
+        pdu = 0x04;                         /* ServiceAttributeRequest */
+        memcpy(req + n, body, 13);
+        n += 13;
+    }
     req[n++] = (unsigned char)l->sdp_cont_len;
     memcpy(req + n, l->sdp_cont, (size_t)l->sdp_cont_len);
     n += l->sdp_cont_len;
 
     l->sdp_tid = (l->sdp_tid + 1) & 0xFFFF;
-    req[0] = 0x06;
+    req[0] = (unsigned char)pdu;
     req[1] = (unsigned char)(l->sdp_tid >> 8);
     req[2] = (unsigned char)l->sdp_tid;
     req[3] = (unsigned char)((n - 5) >> 8);
@@ -630,8 +648,27 @@ static void sdp_send_request(host_t *h, link_t *l)
 static void sdp_start(link_t *l, int query)
 {
     l->sdp_query = query;
+    l->sdp_phase = SDP_PHASE_SEARCH;
     l->sdp_sent = l->sdp_tries = 0;
     l->sdp_len = l->sdp_cont_len = 0;
+    l->sdp_handle_count = l->sdp_handle_idx = 0;
+}
+
+static void sdp_log_descriptor(const link_t *l, const unsigned char *desc, int dlen)
+{
+    int i;
+
+    for (i = 0; i < dlen; i += 16) {
+        char line[16 * 3];
+        int j, n = 0;
+        int end = i + 16 < dlen ? i + 16 : dlen;
+
+        for (j = i; j < end; j++)
+            n += snprintf(line + n, sizeof line - (size_t)n, "%02x%s",
+                          desc[j], j + 1 < end ? " " : "");
+        log_line("pad %s: HID descriptor[%d..%d]: %s",
+                 addr_str(l->addr), i, end - 1, line);
+    }
 }
 
 /* A query is over: use what it brought, or what failing means. */
@@ -655,15 +692,71 @@ static void sdp_finish(host_t *h, link_t *l, int ok)
         l->pid = pid;
         l->ids_known = 1;
     } else if (query == SDP_Q_DESC) {
-        const unsigned char *desc;
-        int dlen;
-        if (ok && sdp_find_descriptor(l->sdp_buf, l->sdp_len, &desc, &dlen) &&
-            generic_setup(l->pctx.bytes, desc, dlen, l->vid, l->pid, h->map_dir)) {
-            l->prof = &generic_profile;
-        } else {
+        const unsigned char *desc = NULL;
+        int dlen = 0;
+
+        if (!ok) {
+            log_line("pad %s: HID descriptor SDP query failed (%d attribute bytes)",
+                     addr_str(l->addr), l->sdp_len);
             link_disconnect(h, l, "no usable HID descriptor");
+        } else if (!sdp_find_descriptor(l->sdp_buf, l->sdp_len, &desc, &dlen)) {
+            log_line("pad %s: SDP response has no HIDDescriptorList (%d attribute bytes)",
+                     addr_str(l->addr), l->sdp_len);
+            link_disconnect(h, l, "no usable HID descriptor");
+        } else {
+            log_line("pad %s: HID report descriptor received (%d bytes)",
+                     addr_str(l->addr), dlen);
+            if (generic_setup(l->pctx.bytes, desc, dlen, l->vid, l->pid, h->map_dir)) {
+                l->prof = &generic_profile;
+            } else {
+                sdp_log_descriptor(l, desc, dlen);
+                link_disconnect(h, l, "no usable HID descriptor");
+            }
         }
     }
+}
+
+static void sdp_attr_complete(host_t *h, link_t *l)
+{
+    const unsigned char *desc = NULL;
+    int dlen = 0;
+    int descriptor_found = 0;
+
+    if (l->sdp_query == SDP_Q_IDS) {
+        uint16_t vid, pid;
+
+        if (sdp_find_ids(l->sdp_buf, l->sdp_len, &vid, &pid)) {
+            sdp_finish(h, l, 1);
+            return;
+        }
+    } else if (l->sdp_query == SDP_Q_DESC) {
+        descriptor_found = sdp_find_descriptor(l->sdp_buf, l->sdp_len, &desc, &dlen);
+        if (descriptor_found) {
+            log_line("pad %s: HID report descriptor received (%d bytes)",
+                     addr_str(l->addr), dlen);
+            if (generic_setup(l->pctx.bytes, desc, dlen, l->vid, l->pid, h->map_dir)) {
+                l->prof = &generic_profile;
+                l->sdp_query = 0;
+                return;
+            }
+        }
+    }
+
+    if (l->sdp_handle_idx + 1 < l->sdp_handle_count) {
+        l->sdp_handle_idx++;
+        l->sdp_len = l->sdp_cont_len = 0;
+        l->sdp_tries = 0;
+        l->sdp_sent = 0;
+        sdp_send_request(h, l);
+        return;
+    }
+    if (descriptor_found) {
+        l->sdp_query = 0;
+        sdp_log_descriptor(l, desc, dlen);
+        link_disconnect(h, l, "no usable HID descriptor");
+        return;
+    }
+    sdp_finish(h, l, 1);
 }
 
 static void on_sdp(host_t *h, link_t *l, const unsigned char *d, int len)
@@ -672,7 +765,56 @@ static void on_sdp(host_t *h, link_t *l, const unsigned char *d, int len)
 
     if (!l->sdp_query || !l->sdp_sent || len < 5) return;
     if (be16(d + 1) != l->sdp_tid) return;          /* an answer to an older try */
-    if (d[0] != 0x07 || len < 8) {
+    if ((unsigned)be16(d + 3) + 5u > (unsigned)len) {
+        sdp_finish(h, l, 0);
+        return;
+    }
+
+    if (l->sdp_phase == SDP_PHASE_SEARCH) {
+        int count, i, state;
+
+        if (d[0] != 0x03 || len < 10) {
+            sdp_finish(h, l, 0);
+            return;
+        }
+        count = (int)be16(d + 7);
+        state = 9 + count * 4;
+        if (count > SDP_MAX_HANDLES || state >= len ||
+            l->sdp_handle_count + count > SDP_MAX_HANDLES) {
+            sdp_finish(h, l, 0);
+            return;
+        }
+        for (i = 0; i < count; i++) {
+            const unsigned char *p = d + 9 + i * 4;
+            uint32_t handle = (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 |
+                              (uint32_t)p[2] << 8 | p[3];
+            l->sdp_handles[l->sdp_handle_count++] = handle;
+        }
+        cl = d[state];
+        if (cl > (int)sizeof l->sdp_cont || state + 1 + cl > len) {
+            sdp_finish(h, l, 0);
+            return;
+        }
+        if (cl) {
+            memcpy(l->sdp_cont, d + state + 1, (size_t)cl);
+            l->sdp_cont_len = cl;
+            l->sdp_tries = 0;
+            sdp_send_request(h, l);
+            return;
+        }
+        if (!l->sdp_handle_count) {
+            sdp_finish(h, l, 0);
+            return;
+        }
+        l->sdp_phase = SDP_PHASE_ATTR;
+        l->sdp_handle_idx = 0;
+        l->sdp_cont_len = l->sdp_len = 0;
+        l->sdp_tries = 0;
+        sdp_send_request(h, l);
+        return;
+    }
+
+    if (d[0] != 0x05 || len < 8) {
         sdp_finish(h, l, 0);
         return;
     }
@@ -688,14 +830,14 @@ static void on_sdp(host_t *h, link_t *l, const unsigned char *d, int len)
         sdp_finish(h, l, 0);
         return;
     }
-    if (cl) {                                       /* more to come: ask for it */
+    if (cl) {
         memcpy(l->sdp_cont, d + 8 + bytes, (size_t)cl);
         l->sdp_cont_len = cl;
         l->sdp_tries = 0;
         sdp_send_request(h, l);
         return;
     }
-    sdp_finish(h, l, 1);
+    sdp_attr_complete(h, l);
 }
 
 /* Moves an SDP query along: channel, request, retries. */

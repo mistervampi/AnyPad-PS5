@@ -150,9 +150,13 @@ directory. To use an already extracted SDK instead, pass its directory:
 `tools/build-elf-docker.sh /path/to/ps5-payload-sdk`.
 
 The ELF and its SHA-256 file are written to `dist/` using the version in
-`src/version.h`. The 0.5.6-beta payload fixes startup on recent firmware by
-resolving `sceAppInstUtilAppInstallTitleDir` at runtime instead of requiring
-the loader to resolve it before the payload starts.
+`src/version.h`. Version 0.5.7-beta adds support for the GameSir SuperNova in
+Bluetooth DS4 mode by correcting SDP service discovery and HID descriptor
+retrieval. It was tested on a PS5 running firmware 13.60. The controller works
+as a DS4; its full-report switch did not complete in the test, so some
+additional features may be unavailable. Version 0.5.6-beta fixed startup on
+recent firmware by resolving `sceAppInstUtilAppInstallTitleDir` at runtime
+instead of requiring the loader to resolve it before the payload starts.
 
 | Path | Purpose |
 |---|---|
@@ -320,7 +324,12 @@ anterior desde la carpeta del proyecto. Si ya tienes el SDK extraído, puedes
 pasar su ruta: `tools/build-elf-docker.sh /ruta/al/ps5-payload-sdk`.
 
 El ELF y su archivo SHA-256 se guardan en `dist/`, con la versión de
-`src/version.h`. El payload 0.5.6-beta corrige el arranque en firmware reciente
+`src/version.h`. La versión 0.5.7-beta añade compatibilidad con el mando
+GameSir SuperNova en modo Bluetooth DS4 al corregir la búsqueda de servicios
+SDP y la lectura del descriptor HID. Se probó en una PS5 con firmware 13.60.
+El mando funciona como DS4; en la prueba no completó el cambio al informe
+completo, por lo que algunas funciones adicionales podrían no estar
+disponibles. La versión 0.5.6-beta corrigió el arranque en firmware reciente
 resolviendo `sceAppInstUtilAppInstallTitleDir` en tiempo de ejecución, en lugar
 de exigir que el cargador la resuelva antes de iniciar el payload.
 

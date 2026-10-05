@@ -318,16 +318,9 @@ static int sdp_list(sim_t *s, unsigned uuid, unsigned char *out)
     } else {
         return seq(out, 0);
     }
-    /* one record's attribute list, inside the list of records */
-    {
-        unsigned char rec[720];
-        int r = seq(rec, n);
-        memcpy(rec + r, a, (size_t)n);
-        r += n;
-        l = seq(out, r);
-        memcpy(out + l, rec, (size_t)r);
-        l += r;
-    }
+    l = seq(out, n);
+    memcpy(out + l, a, (size_t)n);
+    l += n;
     return l;
 }
 
@@ -336,31 +329,68 @@ static int sdp_list(sim_t *s, unsigned uuid, unsigned char *out)
 static void on_host_sdp(sim_t *s, const unsigned char *d, int n)
 {
     unsigned char list[800], rsp[128];
-    int len, p, cl, off = 0, chunk;
-    unsigned uuid;
+    int len, cl, off = 0, chunk, p;
 
-    if (n < 12 || d[0] != 0x06) return;
-    uuid = (unsigned)d[8] << 8 | d[9];          /* pattern {UUID16} */
-    p = 5 + 2 + d[6];                           /* past the pattern */
-    p += 2;                                     /* max byte count */
-    p += 2 + d[p + 1];                          /* attribute id list */
-    if (p >= n) return;
-    cl = d[p];
-    if (cl == 2) {
-        off = d[p + 1] << 8 | d[p + 2];
-        s->sdp_conts++;
-    } else {
+    if (n < 5) return;
+    if (d[0] == 0x02) {                       /* ServiceSearchRequest */
+        unsigned uuid;
+        int count;
+
+        if (n < 13 || d[5] != 0x35 || d[6] != 0x03 || d[7] != 0x19) return;
+        uuid = (unsigned)d[8] << 8 | d[9];
+        count = (uuid == 0x1200 && s->pad.vid && s->pad.pid) ||
+                (uuid == 0x1124 && s->pad.desc_len) ? 1 : 0;
+        rsp[0] = 0x03;
+        rsp[1] = d[1];
+        rsp[2] = d[2];
+        rsp[5] = 0;
+        rsp[6] = (unsigned char)count;
+        rsp[7] = 0;
+        rsp[8] = (unsigned char)count;
+        if (count) {
+            uint32_t handle = uuid == 0x1200 ? 0x00010000 : 0x00010001;
+            rsp[9] = (unsigned char)(handle >> 24);
+            rsp[10] = (unsigned char)(handle >> 16);
+            rsp[11] = (unsigned char)(handle >> 8);
+            rsp[12] = (unsigned char)handle;
+            rsp[13] = 0;
+            n = 14;
+        } else {
+            rsp[9] = 0;
+            n = 10;
+        }
+        rsp[3] = 0;
+        rsp[4] = (unsigned char)(n - 5);
         s->sdp_queries++;
+        acl_to_host(s, s->sdp.peer, rsp, n);
+        return;
+    }
+    if (d[0] != 0x04 || n < 19) return;       /* ServiceAttributeRequest */
+    {
+        uint32_t handle = (uint32_t)d[5] << 24 | (uint32_t)d[6] << 16 |
+                          (uint32_t)d[7] << 8 | d[8];
+        unsigned uuid = handle == 0x00010000 ? 0x1200 :
+                        handle == 0x00010001 ? 0x1124 : 0;
+        p = 11 + 2 + d[12];                   /* end of AttributeIDList */
+        if (p >= n) return;
+        cl = d[p];
+        if (cl == 2) {
+            off = (int)d[p + 1] << 8 | d[p + 2];
+            s->sdp_conts++;
+        } else {
+            s->sdp_queries++;
+        }
+        len = sdp_list(s, uuid, list);
     }
 
-    len = sdp_list(s, uuid, list);
+    if (off > len) return;
     chunk = len - off < SDP_CHUNK ? len - off : SDP_CHUNK;
-    rsp[0] = 0x07;
+    rsp[0] = 0x05;
     rsp[1] = d[1];
     rsp[2] = d[2];
     rsp[5] = (unsigned char)(chunk >> 8);
     rsp[6] = (unsigned char)chunk;
-    memcpy(rsp + 7, list + off, (size_t)chunk);
+    if (chunk) memcpy(rsp + 7, list + off, (size_t)chunk);
     if (off + chunk < len) {
         rsp[7 + chunk] = 2;
         rsp[8 + chunk] = (unsigned char)((off + chunk) >> 8);

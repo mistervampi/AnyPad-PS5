@@ -83,6 +83,9 @@
 
 #define SDP_Q_IDS          1    /* Device ID: vendor and product */
 #define SDP_Q_DESC         2    /* HID report descriptor, for the generic profile */
+#define SDP_PHASE_SEARCH   1
+#define SDP_PHASE_ATTR     2
+#define SDP_MAX_HANDLES   16
 #define T_PROBE_IDLE   20000    /* nothing heard for this long: probe */
 #define T_PROBE_WAIT    2000    /* between probes */
 #define PROBE_TRIES        3
@@ -184,6 +187,7 @@ typedef struct {
     const pad_profile *prof;
 
     int sdp_query;                  /* SDP_Q_* being asked, 0: none */
+    int sdp_phase;                  /* SDP_PHASE_* */
     int sdp_sent, sdp_tries;
     unsigned sdp_tid;
     long t_sdp;
@@ -191,6 +195,8 @@ typedef struct {
     int sdp_cont_len;
     unsigned char sdp_buf[1024];    /* attribute lists gathered so far */
     int sdp_len;
+    uint32_t sdp_handles[SDP_MAX_HANDLES];
+    int sdp_handle_count, sdp_handle_idx;
 
     chan sdp, ctrl, intr;
     int ready, disconnecting;
