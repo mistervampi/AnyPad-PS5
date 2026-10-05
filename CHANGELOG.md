@@ -5,6 +5,13 @@ version is set in `src/version.h` and is also in the first line of the log, in
 the start-up notification, on the web page, and in the binary
 (`strings AnyPad-PS5-*.elf | grep anypad-version`).
 
+## 0.5.6-beta
+
+- Corrige el arranque en firmwares recientes: `sceAppInstUtilAppInstallTitleDir` se resuelve en tiempo de ejecucion por su NID, con `sceAppInstUtilAppInstallAll` como alternativa. Asi se evita exigir que el cargador resuelva esa importacion antes de iniciar el ELF.
+- La compilacion de Release con esta correccion se ha confirmado arrancando en una PS5 con firmware 13.60. El funcionamiento completo de Bluetooth y mandos en ese firmware aun requiere validacion.
+- El arranque registra errores concretos al crear el directorio de estado, abrir el log, adquirir el bloqueo e iniciar el servidor web.
+- El script Docker compila con un solo comando y descarga el SDK actual si no se proporciona una copia local.
+
 ## 0.5.5-beta
 
 - Primera beta. Base: 0.4.7-alpha, que encuentra el DS4 en la consola; la 0.5.4 (= 0.4.7 + botón «Pulsar PS») se confirmó que funciona y pasa a beta.

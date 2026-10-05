@@ -217,14 +217,23 @@ int main(void)
     const char *why = "stop requested";
     long last_power = 0;
 
-    mkdir(STATE_DIR, 0755);
-    log_open(LOG_PATH);
+    if (mkdir(STATE_DIR, 0755) != 0 && errno != EEXIST) {
+        int err = errno;
+        notify("AnyPad PS5: no se pudo crear /data/anypad (errno %d)", err);
+        return 1;
+    }
+    if (!log_open(LOG_PATH)) {
+        int err = errno;
+        notify("AnyPad PS5: no se pudo abrir el log de arranque (errno %d)", err);
+        return 1;
+    }
     log_line("AnyPad PS5 %s", ANYPAD_VERSION);
+    log_line("startup: state directory and log are writable");
     (void)g_version_tag;
 
     if (!lock_take(LOCK_PATH)) {
-        log_line("another instance is running");
-        notify("AnyPad PS5: ya esta en marcha");
+        log_line("startup: could not acquire instance lock (errno %d)", errno);
+        notify("AnyPad PS5: no se pudo adquirir el bloqueo (errno %d)", errno);
         log_close();
         return 1;
     }
@@ -253,8 +262,7 @@ int main(void)
     if (g_web)
         notify("AnyPad PS5 %s\nMenu: %s (o Contenido multimedia > AnyPad)\nAntes crea un usuario nuevo y asignale el mando cuando la consola lo pregunte. Juega con tu usuario y pulsa PS un momento para usar ese mando", ANYPAD_VERSION, url);
     else
-        notify("AnyPad PS5 %s\nNo se pudo abrir la pagina del menu (puerto %d ocupado?)",
-               ANYPAD_VERSION, WEB_PORT);
+        notify("AnyPad PS5 %s: web server failed; see anypad.log", ANYPAD_VERSION);
 
     sysinfo_log();
 

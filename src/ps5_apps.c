@@ -7,7 +7,6 @@
 
 #include <ps5/kernel.h>
 
-
 extern const unsigned char icon_png_data[];
 extern const unsigned int icon_png_data_len;
 
@@ -15,9 +14,6 @@ int sceAppInstUtilInitialize(void);
 int sceAppInstUtilTerminate(void);
 int sceAppInstUtilAppInstallAll(void *reserved);
 int sceAppInstUtilAppUnInstall(const char *title_id);
-
-
-// Maybe this could solve payload upon injection
 
 static int install_title_dir(const char *title_id, const char *dir)
 {
@@ -50,7 +46,7 @@ int apps_install_launcher(void)
         log_line("launcher: sceAppInstUtilInitialize -> %#x", (unsigned)r);
         return -1;
     }
-    r = sceAppInstUtilAppInstallTitleDir(LAUNCHER_TITLE_ID, LAUNCHER_APP_ROOT "/", 0);
+    r = install_title_dir(LAUNCHER_TITLE_ID, LAUNCHER_APP_ROOT "/");
     sceAppInstUtilTerminate();
     log_line("launcher: installed %s in the media row -> %#x", LAUNCHER_TITLE_ID, (unsigned)r);
     return r == 0 ? 0 : -1;

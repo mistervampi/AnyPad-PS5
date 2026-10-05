@@ -136,12 +136,23 @@ choice: anyone on the same local network can use it. It only accepts private-net
 ## Build and test
 
 ```
-make test                                  # unit tests + simulation, on a Mac or Linux PC
-make fuzz                                  # malformed input under the sanitizers
-tools/build-elf-docker.sh /path/to/ps5-payload-sdk   # the ELF, without installing anything
+make test                    # unit tests + simulation, on a Mac or Linux PC
+make fuzz                    # malformed input under the sanitizers
+tools/build-elf-docker.sh    # build the ELF with Docker; downloads the current SDK on first run
 ```
 
-The ELF is `dist/AnyPad-PS5-<version>-alpha.elf` (version in `src/version.h`).
+The Docker build uses Ubuntu 24.04 with Clang/LLD 18 and downloads the latest
+binary release from [ps5-payload-dev/sdk](https://github.com/ps5-payload-dev/sdk)
+inside the container. It needs Docker and an Internet connection; it does not
+install the SDK on the host. In WSL, start Docker Desktop and enable WSL
+integration for your distribution, then run the command above from the project
+directory. To use an already extracted SDK instead, pass its directory:
+`tools/build-elf-docker.sh /path/to/ps5-payload-sdk`.
+
+The ELF and its SHA-256 file are written to `dist/` using the version in
+`src/version.h`. The 0.5.6-beta payload fixes startup on recent firmware by
+resolving `sceAppInstUtilAppInstallTitleDir` at runtime instead of requiring
+the loader to resolve it before the payload starts.
 
 | Path | Purpose |
 |---|---|
@@ -295,12 +306,23 @@ por decisión propia: cualquiera de tu red local puede usarla. Solo admite equip
 ## Compilar y probar
 
 ```
-make test                                  # pruebas unitarias + simulación, en Mac o Linux
-make fuzz                                  # entradas malformadas bajo los sanitizadores
-tools/build-elf-docker.sh /ruta/al/ps5-payload-sdk   # el ELF, sin instalar nada
+make test                  # pruebas unitarias + simulación, en Mac o Linux
+make fuzz                  # entradas malformadas bajo los sanitizadores
+tools/build-elf-docker.sh  # compila con Docker; descarga el SDK actual la primera vez
 ```
 
-El ELF es `dist/AnyPad-PS5-<versión>-alpha.elf` (versión en `src/version.h`).
+La compilación Docker usa Ubuntu 24.04 con Clang/LLD 18 y descarga dentro del
+contenedor la última versión binaria de
+[ps5-payload-dev/sdk](https://github.com/ps5-payload-dev/sdk). Necesita Docker
+e Internet; no instala el SDK en el equipo. En WSL, inicia Docker Desktop y
+activa la integración de WSL para tu distribución; después ejecuta el comando
+anterior desde la carpeta del proyecto. Si ya tienes el SDK extraído, puedes
+pasar su ruta: `tools/build-elf-docker.sh /ruta/al/ps5-payload-sdk`.
+
+El ELF y su archivo SHA-256 se guardan en `dist/`, con la versión de
+`src/version.h`. El payload 0.5.6-beta corrige el arranque en firmware reciente
+resolviendo `sceAppInstUtilAppInstallTitleDir` en tiempo de ejecución, en lugar
+de exigir que el cargador la resuelva antes de iniciar el payload.
 
 Registro de pruebas en consola: [PRUEBAS.md](PRUEBAS.md). Historial de versiones: [CHANGELOG.md](CHANGELOG.md).
 

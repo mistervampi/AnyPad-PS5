@@ -1,0 +1,2 @@
+tools/*.sh text eol=lf
+tools/Dockerfile.build-elf text eol=lf

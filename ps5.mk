@@ -2,7 +2,7 @@
 
 include $(PS5_PAYLOAD_SDK)/toolchain/prospero.mk
 
-VERSION := $(shell sed -n 's/^\#define ANYPAD_VERSION "\(.*\)"/\1/p' src/version.h)
+VERSION := $(shell sed -n 's/^\#define ANYPAD_VERSION "\(.*\)"/\1/p' src/version.h | tr -d '\r')
 ELF   := dist/AnyPad-PS5-$(VERSION).elf
 BUILD := build/ps5
 

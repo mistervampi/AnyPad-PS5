@@ -328,15 +328,19 @@ web_t *web_start(const web_cfg *cfg, int port)
 {
     struct sockaddr_in sin;
     web_t *w;
-    int one = 1, i;
+    int one = 1, i, err;
 
     w = calloc(1, sizeof *w);
-    if (!w) return NULL;
+    if (!w) {
+        log_line("web: allocation failed");
+        return NULL;
+    }
     w->cfg = *cfg;
     for (i = 0; i < WEB_CLIENTS; i++) w->c[i].fd = -1;
 
     w->fd = socket(AF_INET, SOCK_STREAM, 0);
     if (w->fd < 0) {
+        log_line("web: socket failed (errno %d)", errno);
         free(w);
         return NULL;
     }
@@ -345,8 +349,16 @@ web_t *web_start(const web_cfg *cfg, int port)
     sin.sin_family = AF_INET;
     sin.sin_port = htons((uint16_t)port);
     sin.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (bind(w->fd, (struct sockaddr *)&sin, sizeof sin) != 0 || listen(w->fd, 4) != 0) {
-        log_line("web: port %d not available (errno %d), no web page", port, errno);
+    if (bind(w->fd, (struct sockaddr *)&sin, sizeof sin) != 0) {
+        err = errno;
+        log_line("web: bind port %d failed (errno %d)", port, err);
+        close(w->fd);
+        free(w);
+        return NULL;
+    }
+    if (listen(w->fd, 4) != 0) {
+        err = errno;
+        log_line("web: listen on port %d failed (errno %d)", port, err);
         close(w->fd);
         free(w);
         return NULL;

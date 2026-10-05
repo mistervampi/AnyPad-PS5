@@ -1,41 +1,48 @@
 #!/bin/sh
-# Builds AnyPad PS5 without installing anything: the official PS5 payload SDK
-# (the release zip, unpacked) mounted read-only into a container with clang 18
-# and lld 18 for linux/amd64. The ELF is dist/AnyPad-PS5-<version>.elf, with the
-# version from src/version.h, and a .sha256 beside it.
+# Builds AnyPad PS5 in Docker. By default, downloads the current ps5-payload-dev
+# SDK release inside the container; an extracted SDK directory can be supplied
+# to build offline. The ELF and SHA-256 file are written under dist/.
 #
-#   tools/build-elf-docker.sh /path/to/ps5-payload-sdk [image]
-#
-# The default image is any Ubuntu 24.04 one with clang-18 and lld-18, e.g. one
-# made from:  FROM ubuntu:24.04 / RUN apt-get update && apt-get install -y clang-18 lld-18
-set -e
-SDK="${1:?usage: $0 /path/to/ps5-payload-sdk [image]}"
-IMAGE="${2:-anypad-build}"
-PROJ="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="$(sed -n 's/^#define ANYPAD_VERSION "\(.*\)"/\1/p' "$PROJ/src/version.h")"
+#   tools/build-elf-docker.sh [path/to/extracted/ps5-payload-sdk]
+set -eu
+
+PROJ=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+IMAGE="${ANYPAD_BUILD_IMAGE:-anypad-build}"
+SDK_ARG="${1:-}"
+VERSION="$(sed -n 's/^#define ANYPAD_VERSION "\(.*\)"/\1/p' "$PROJ/src/version.h" | tr -d '\r')"
 [ -n "$VERSION" ] || { echo "no version in src/version.h" >&2; exit 1; }
 OUT="dist/AnyPad-PS5-$VERSION.elf"
-mkdir -p "$PROJ/dist"
 
-docker run --rm --platform linux/amd64 -e OUT="$OUT" \
-  -v "$SDK":/opt/ps5-payload-sdk-ro:ro -v "$PROJ":/work "$IMAGE" bash -c '
-set -e
-cp -r /opt/ps5-payload-sdk-ro /opt/ps5-payload-sdk
-export PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk
-# the SDK wrappers ask llvm-config where LLVM lives
-printf "#!/bin/sh\ncase \"\$1\" in --bindir) echo /usr/lib/llvm-18/bin;; --version) echo 18.1.3;; *) exit 1;; esac\n" \
-  > /usr/local/bin/llvm-config
-chmod +x /usr/local/bin/llvm-config
-CC=$PS5_PAYLOAD_SDK/bin/prospero-clang
-cd /work
-rm -rf build/elf && mkdir -p build/elf
-OBJS=""
-for f in util log crc32 smp_crypto profiles generic host le web web_page config evstream hotkey lock netinfo usb_desc hci_usb ps5_power ps5_ui ps5_apps ps5_sysinfo launcher icon_data ps5_vpad ps5_main; do
-  $CC -std=c11 -Wall -Wextra -Werror -O2 -Isrc -c src/$f.c -o build/elf/$f.o
-  OBJS="$OBJS build/elf/$f.o"
-done
-$CC -o "$OUT" $OBJS -lScePad -lSceUserService -lSceSystemService -lSceAppInstUtil -ldl
-'
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker is required. In WSL, start Docker Desktop and enable WSL integration." >&2
+  exit 1
+fi
+
+mkdir -p "$PROJ/dist"
+docker build --platform linux/amd64 -t "$IMAGE" -f "$PROJ/tools/Dockerfile.build-elf" "$PROJ"
+
+set -- docker run --rm --platform linux/amd64 \
+  -e OUT="$OUT" \
+  -v "$PROJ:/work" \
+  -w /work
+
+if [ -n "$SDK_ARG" ]; then
+  SDK=$(CDPATH= cd -- "$SDK_ARG" 2>/dev/null && pwd) || {
+    echo "SDK directory does not exist: $SDK_ARG" >&2
+    exit 1
+  }
+  if [ ! -f "$SDK/toolchain/prospero.mk" ] || [ ! -x "$SDK/bin/prospero-clang" ]; then
+    echo "SDK directory must contain toolchain/prospero.mk and bin/prospero-clang: $SDK" >&2
+    exit 1
+  fi
+  set -- "$@" -e SDK_MODE=mounted -v "$SDK:/opt/ps5-payload-sdk-ro:ro"
+else
+  set -- "$@" -e SDK_MODE=download
+fi
+
+set -- "$@" "$IMAGE" bash /work/tools/build-elf-container.sh
+
+"$@"
 cd "$PROJ"
-{ shasum -a 256 "$OUT" 2>/dev/null || sha256sum "$OUT"; } | tee "$OUT.sha256"
-ls -la "$OUT"
+sha256sum "$OUT" | tee "$OUT.sha256"
+ls -lh "$OUT" "$OUT.sha256"
