@@ -5,13 +5,32 @@
 #include <stddef.h>
 #include <sys/stat.h>
 
+#include <ps5/kernel.h>
+
+
 extern const unsigned char icon_png_data[];
 extern const unsigned int icon_png_data_len;
 
 int sceAppInstUtilInitialize(void);
 int sceAppInstUtilTerminate(void);
-int sceAppInstUtilAppInstallTitleDir(const char *title_id, const char *dir, void *reserved);
+int sceAppInstUtilAppInstallAll(void *reserved);
 int sceAppInstUtilAppUnInstall(const char *title_id);
+
+
+// Maybe this could solve payload upon injection
+
+static int install_title_dir(const char *title_id, const char *dir)
+{
+    int (*install_fn)(const char *, const char *, void *) = NULL;
+    static const char nid[] = "Wudg3Xe3heE";
+    uint32_t handle;
+
+    if (kernel_dynlib_handle(-1, "libSceAppInstUtil.sprx", &handle) == 0)
+        install_fn = (void *)kernel_dynlib_resolve(-1, handle, nid);
+
+    if (install_fn) return install_fn(title_id, dir, 0);
+    return sceAppInstUtilAppInstallAll(0);
+}
 
 int apps_install_launcher(void)
 {
